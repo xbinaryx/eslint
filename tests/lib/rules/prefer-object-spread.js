@@ -98,6 +98,14 @@ ruleTester.run("prefer-object-spread", rule, {
 		"Object.assign({}, { set a(val) {} })",
 		"Object.assign({}, { foo: 'bar', get a() {} }, {})",
 		"Object.assign({ foo }, bar, {}, { baz: 'quux', set a(val) {}, quuux }, {})",
+
+		// ignore Object.assign() with > 1 arguments if any of the arguments is an object expression with a `__proto__` property
+		"Object.assign({}, { __proto__: proto })",
+		'Object.assign({}, { "__proto__": proto })',
+		'Object.assign({}, { ["__proto__"]: proto })',
+		"Object.assign({}, { __proto__() {} })",
+		"Object.assign({ __proto__: proto }, foo)",
+		'Object.assign({}, foo, { ["__proto__"]: proto })',
 	],
 
 	invalid: [
@@ -978,6 +986,30 @@ ruleTester.run("prefer-object-spread", rule, {
 		{
 			code: "Object.assign({ get a() {}, set b(val) {} })",
 			output: "({get a() {}, set b(val) {}})",
+			errors: [
+				{
+					messageId: "useLiteralMessage",
+					line: 1,
+					column: 1,
+				},
+			],
+		},
+
+		// report Object.assign() with a `__proto__` property if the function call has only 1 argument
+		{
+			code: "Object.assign({ __proto__: proto })",
+			output: "({__proto__: proto})",
+			errors: [
+				{
+					messageId: "useLiteralMessage",
+					line: 1,
+					column: 1,
+				},
+			],
+		},
+		{
+			code: 'Object.assign({ ["__proto__"]: proto })',
+			output: '({["__proto__"]: proto})',
 			errors: [
 				{
 					messageId: "useLiteralMessage",
